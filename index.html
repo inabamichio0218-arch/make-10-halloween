@@ -141,8 +141,9 @@ const available=[0,1,2].filter(lane=>{
 if(!available.length)return;
 const lane=pick(available);addGhost(lane,rand(1,9),spawnY);
 }function checkLoss(){if(ghosts.some(g=>g.y-108<=danger)){gameOver();return true}return false}function tick(t){if(!playing)return;let dt=Math.min((t-last)/1000,.06);last=t;if(!paused&&!locked){for(const g of ghosts){g.y-=speed*(speedMode==="slow"?0.6:1)*dt;position(g)}spawnClock+=dt;if(spawnClock>=replenishEvery/(speedMode==="slow"?0.6:1)){spawnClock=0;spawnRandom()}if(checkLoss())return;
-// If the matching ghost is no longer visible, redraw from visible choices only.
-if(visibleGhosts().length&&!locked&&!visibleGhosts().some(g=>g.num===10-current)){ensureAnswer();}
+// v30: Never reselect the pumpkin in the animation loop.
+// A dangerous ghost does not automatically receive a matching pumpkin.
+// The next pumpkin is selected only after the player makes a shot.
 }raf=requestAnimationFrame(tick)}function reset(startGame=true){cancelAnimationFrame(raf);ghosts.forEach(g=>g.el.remove());ghosts=[];score=0;pairs=0;seq=0;spawnClock=0;locked=false;paused=false;urgentTargetId=null;recentShots=[];document.querySelector('#pause').textContent='⏸ とめる';document.querySelector('#pause').classList.remove('waiting');document.querySelector('#pause').disabled=false;document.querySelector('#play').disabled=true;document.querySelector('#mascot').classList.remove('scared','celebrate');setCat('idle');for(let lane=0;lane<3;lane++){addGhost(lane,rand(1,9),spawnY+90+lane*30)}
 // Build a varied opening wave independently of the answer: 3 extra ghosts,
 // all random, traveling up the three lanes rather than tailored complements.
