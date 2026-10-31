@@ -100,23 +100,22 @@ function randomPumpkin(avoid=null){
  const pool=nums.filter(n=>n!==avoid && !(recentShots.length>=2 && recentShots.at(-1)===n && recentShots.at(-2)===n));
  return pick(pool.length?pool:nums);
 }
-// Choose complements from actual ghosts, not from the threat-line priority.
-// Normally omit the single highest ghost from the candidate pool; that leaves
-// a variety of lower targets rather than repeatedly saving the oldest one.
+// v33: Every existing ghost is an equally likely candidate, regardless of
+// height or danger-line proximity. Repeated numbers are allowed and each
+// individual ghost receives one ticket in the draw.
 function boardPumpkin(avoid=null){
- const visible=ghosts.filter(g=>!g.el.classList.contains('pop')&&g.y>danger+108)
-    .sort((a,b)=>a.y-b.y);
- let options=visible.length>1?visible.slice(1):visible;
- let distinct=[...new Set(options.map(g=>10-g.num))];
- let pool=distinct.filter(n=>n!==avoid);
- if(!pool.length)pool=distinct;
- if(pool.length)return pick(pool);
- return randomPumpkin(avoid);
+ const candidates=ghosts.filter(g=>!g.el.classList.contains('pop'));
+ if(!candidates.length)return randomPumpkin(avoid);
+ // Avoid an immediate repeat only when other choices are available.
+ const alternatives=candidates.filter(g=>10-g.num!==avoid);
+ const pool=alternatives.length?alternatives:candidates;
+ return 10-pick(pool).num;
 }
 function chooseFromBoard(excludeId=null,excludeNum=null){return boardPumpkin(excludeNum);}
 function updateFuture(){next=boardPumpkin(current);}
-// Ensure an answer at the bottom only if the advertised NEXT lost its last
-// remaining match. Do not alter NEXT, change existing digits or rescue top ghosts.
+// Only add a new answer when the already-displayed NEXT becomes CURRENT
+// and no matching ghost remains. Never replace the announced pumpkin or
+// change an existing ghost, and never privilege the topmost one.
 function ensureAnswer(){
  if(ghosts.some(g=>!g.el.classList.contains('pop')&&g.num===10-current))return;
  const complement=10-current;
@@ -133,9 +132,7 @@ recentShots.push(fired);recentShots=recentShots.slice(-3);
 const oldNext=next;
 current=oldNext;
 ensureAnswer();
-// Keep the advertised NEXT whenever its match remains. If it has just
-// vanished, draw fairly from all ghosts already visible, not the oldest one.
-// Keep the promised NEXT even if no currently visible ghost matches it.
+// Draw NEXT fairly from all ghosts; it never changes until it becomes CURRENT.
 urgentTargetId=null;updateFuture();hud();locked=false;checkLoss()}function spawnRandom(){
 // Use lanes with a vacant entrance: never queue a stream of invisible ghosts
 // below the holes. Random numbers are independent of the launcher.
